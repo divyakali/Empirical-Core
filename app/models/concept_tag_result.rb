@@ -2,6 +2,8 @@ class ConceptTagResult < ActiveRecord::Base
 
   belongs_to :concept_tag
   belongs_to :activity_session
+
+  # remove 'belongs_to concept_category'
   belongs_to :concept_category
 
   before_validation :extract_tag_from_metadata, on: :create
@@ -18,6 +20,13 @@ class ConceptTagResult < ActiveRecord::Base
 
   # Used as a CTE (common table expression) by other models to get progress report data.
   def self.correct_results_for_progress_report(teacher, filters)
+    # change <<-SELECT statement to :
+    # query = select(<<-SELECT
+    #   cast(concept_tag_results.metadata->>'correct' as int) as is_correct,
+    #   activity_sessions.user_id,
+    #   concept_categories.id as concept_category_id,
+    #   concept_tag_results.concept_tag_id
+    # SELECT
 
     query = select(<<-SELECT
       cast(concept_tag_results.metadata->>'correct' as int) as is_correct,
@@ -26,6 +35,7 @@ class ConceptTagResult < ActiveRecord::Base
       concept_tag_results.concept_tag_id
     SELECT
     ).joins({:activity_session => {:classroom_activity => :classroom}})
+  # ).joins({:concept_tag => {:concept_category})
       .where("activity_sessions.state = ?", "finished")
       .where("classrooms.teacher_id = ?", teacher.id) # Always by teacher
 
@@ -42,6 +52,7 @@ class ConceptTagResult < ActiveRecord::Base
     end
 
     if filters[:concept_category_id].present?
+    # query = query.where("concept_categories.id IN (?)", filters[:concept_category_id])
       query = query.where("concept_tag_results.concept_category_id IN (?)", filters[:concept_category_id])
     end
 
@@ -52,8 +63,11 @@ class ConceptTagResult < ActiveRecord::Base
     query
   end
 
+
+
   def self.grammar_counts
     select("concept_tags.name, #{correct_result_count_sql} as correct_result_count, #{incorrect_result_count_sql}  as incorrect_result_count")
+    # change below to .joins(:concept_tag => [:concept_category => :concept_class])
     .joins(:concept_tag => :concept_class)
     .where(concept_classes: {name: "Grammar Concepts"})
     .group("concept_tags.name")
@@ -74,7 +88,7 @@ class ConceptTagResult < ActiveRecord::Base
   end
 
   private
-
+  # this will not be needed at all
   def extract_tag_from_metadata
     return unless metadata.present?
     tag_name = metadata.delete("concept_tag") # Can't use symbols because it's a JSON hash
