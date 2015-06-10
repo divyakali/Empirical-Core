@@ -13,16 +13,12 @@ class AccountsController < ApplicationController
     @user = User.find_by_id(session[:temporary_user_id]) || User.new
 
     @user.attributes = user_params
-    @user.name = capitalized_name
     @user.safe_role_assignment(role)
-
+    @user.validate_username = true
     if @user.save
       sign_in @user
-
       AccountCreationWorker.perform_async(@user.id)
-
       @user.subscribe_to_newsletter
-
       redirect_to profile_path
     else
       render 'accounts/new'
@@ -32,9 +28,15 @@ class AccountsController < ApplicationController
   def update
     user_params.delete(:password) unless user_params[:password].present?
     @user = current_user
-    @user.attributes = user_params
 
-    if @user.save
+    if user_params[:username] == @user.username
+      validate_username = false
+    else
+      validate_username = true
+    end
+
+    user_params.merge! validate_username: validate_username
+    if @user.update_attributes user_params
       redirect_to updated_account_path
     else
       render 'accounts/edit'
@@ -51,16 +53,4 @@ protected
     params.require(:user).permit(:classcode, :email, :name, :username, :password, :password_confirmation, :newsletter, :terms_of_service, :school_ids)
   end
 
-  def capitalized_name
-    result = user_params[:name]
-    if user_params[:name].present?
-      f,l = user_params[:name].split(/\s+/)
-      if f.present? and l.present?
-        result = "#{f.capitalize} #{l.capitalize}"
-      else
-        result = user_params[:name].capitalize
-      end
-    end
-    result
-  end
 end

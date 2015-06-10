@@ -6,7 +6,7 @@ EmpiricalGrammar::Application.routes.draw do
   # authenticate :user, lambda { |u| u.admin? } do
     mount Sidekiq::Web => '/sidekiq'
   # end
-
+  resources :subscriptions
   resources :assessments
   resources :assignments
   resource :profile
@@ -23,6 +23,13 @@ EmpiricalGrammar::Application.routes.draw do
   namespace :teachers do
     resources :units, as: 'units_path'  # moved from within classroom, since units are now cross-classroom
     resources :classroom_activities, only: [:destroy, :update], as: 'classroom_activities_path'
+
+
+    get 'my_account' => 'classroom_manager#my_account'
+    get 'my_account_data' => 'classroom_manager#my_account_data'
+    put 'update_my_account' => 'classroom_manager#update_my_account'
+    delete 'delete_my_account' => 'classroom_manager#delete_my_account'
+
 
     namespace :progress_reports do
       resources :activity_sessions, only: [:index]
@@ -68,7 +75,6 @@ EmpiricalGrammar::Application.routes.draw do
       %w(invite_students accounts import).each do |page|
         get page => "classroom_manager##{page}"
       end
-
 
     end
   end
@@ -116,16 +122,19 @@ EmpiricalGrammar::Application.routes.draw do
     end
 
     resources :users do
+      resource :subscription
+
       collection do
         match 'search' => 'users#search', via: [:get, :post], as: :search
       end
       member do
+        get :show_json
         put :sign_in
       end
     end
   end
 
-  %w(middle_school story learning develop mission faq tos privacy activities new impact team premium_access premium).each do |page|
+  %w(middle_school story learning develop mission faq tos privacy activities new impact stats team premium_access premium).each do |page|
     get page => "pages##{page}", as: "#{page}"
   end
 

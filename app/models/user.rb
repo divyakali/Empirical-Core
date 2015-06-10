@@ -1,14 +1,20 @@
 class User < ActiveRecord::Base
   include Student, Teacher
 
+  attr_accessor :validate_username, :require_password_confirmation_when_password_present
+
+  before_save :capitalize_name
+
   has_secure_password validations: false
 
   has_and_belongs_to_many :schools
   has_and_belongs_to_many :districts
+  has_many :subscriptions
 
   delegate :name, :mail_city, :mail_state, to: :school, allow_nil: true, prefix: :school
 
-  validates :name,                  format:       {without: /\t/, message: 'cannot contain tabs'}
+  validates :name,                  presence: true,
+                                    format:       {without: /\t/, message: 'cannot contain tabs'}
 
   validate :name_must_contain_first_and_last_name
 
@@ -20,7 +26,7 @@ class User < ActiveRecord::Base
 
   validates :username,              presence:     { if: ->(m) { m.email.blank? && m.permanent? } },
                                     uniqueness:   { allow_blank: true },
-                                    format:       {without: /\s/, message: 'cannot contain spaces'}
+                                    format:       {without: /\s/, message: 'cannot contain spaces', if: :validate_username?}
 
   validates :terms_of_service,      acceptance:   { on: :create }
 
@@ -35,6 +41,10 @@ class User < ActiveRecord::Base
   attr_accessor :newsletter
 
   before_validation :prep_authentication_terms
+
+  def validate_username?
+    validate_username.present? ? validate_username : false
+  end
 
   def safe_role_assignment role
     self.role = if sanitized_role = SAFE_ROLES.find{ |r| r == role.strip }
@@ -99,6 +109,19 @@ class User < ActiveRecord::Base
     SQL
   end
 
+  def capitalize_name
+    result = name
+    if name.present?
+      f,l = name.split(/\s+/)
+      if f.present? and l.present?
+        result = "#{f.capitalize} #{l.capitalize}"
+      else
+        result = name.capitalize
+      end
+    end
+    self.name = result
+  end
+
   def self.for_standards_report(teacher, filters)
     User.from_cte('best_activity_sessions', ActivitySession.for_standards_report(teacher, filters))
       .with(best_per_topic_user: best_per_topic_user)
@@ -150,9 +173,10 @@ class User < ActiveRecord::Base
   end
 
   def self.setup_from_clever(auth_hash)
-    user = User.create_from_clever(auth_hash[:info])
+    d = District.create_from_clever(auth_hash[:info][:district])
 
-    District.create_from_clever(user.clever_district_id)
+    user = User.create_from_clever(auth_hash)
+    user.districts << d unless user.districts.include?(d)
 
     user.connect_to_classrooms! if user.student?
     user.create_classrooms! if user.teacher?
@@ -192,6 +216,7 @@ class User < ActiveRecord::Base
 
   def refresh_token!
     update_attributes token: SecureRandom.urlsafe_base64
+    save validate: false
   end
 
   def serialized
@@ -267,14 +292,14 @@ class User < ActiveRecord::Base
 
   # Create the user from a Clever info hash
   def self.create_from_clever(hash, role_override = nil)
-    user = User.where(email: hash[:email]).first_or_initialize
+    user = User.where(email: hash[:info][:email]).first_or_initialize
     user = User.new if user.email.nil?
     user.update_attributes(
-      clever_id: hash[:id],
-      token: hash[:token],
-      role: role_override || hash[:user_type],
-      first_name: hash[:name][:first],
-      last_name: hash[:name][:last]
+      clever_id: hash[:info][:id],
+      token: (hash[:credentials] ? hash[:credentials][:token] : nil),
+      role: role_override || hash[:info][:user_type],
+      first_name: hash[:info][:name][:first],
+      last_name: hash[:info][:name][:last]
     )
     user
   end
@@ -282,7 +307,7 @@ class User < ActiveRecord::Base
   # Create all classrooms this teacher is connected to
   def create_classrooms!
     clever_user.sections.each do |section|
-      Classroom.setup_from_clever(section)
+      Classroom.setup_from_clever(section, self)
     end
   end
 
@@ -295,7 +320,7 @@ private
   # Clever integration
   def clever_user
     klass = "Clever::#{self.role.capitalize}".constantize
-    @clever_user ||= klass.retrieve(self.clever_id)
+    @clever_user ||= klass.retrieve(self.clever_id, self.districts.first.token)
   end
 
   # validation filters
@@ -313,7 +338,7 @@ private
   end
 
   def requires_password_confirmation?
-    requires_password? && password.present?
+    require_password_confirmation_when_password_present.present? || (requires_password? && password.present?)
   end
 
   # FIXME: may not be being called anywhere

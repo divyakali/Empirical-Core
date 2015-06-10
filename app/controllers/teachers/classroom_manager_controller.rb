@@ -82,6 +82,39 @@ class Teachers::ClassroomManagerController < ApplicationController
     }
   end
 
+  # needed to simply render a page, lets React.js do the rest
+  def my_account
+  end
+
+  def my_account_data
+    @user = current_user
+    render json: @user
+  end
+
+  def update_my_account
+
+    # incoming request
+
+    # var data = {
+    #   name: this.state.name,
+    #   username: this.state.username,
+    #   email: this.state.email,
+    #   password: this.state.password,
+    #   password_confirmation: this.state.passwordConfirmation,
+    #   school_id: this.state.selectedSchool.id,
+    #   school_options_do_not_apply: this.state.schoolOptionsDoNotApply
+    # }
+
+    response = current_user.update_teacher params
+    render json: response
+  end
+
+  def delete_my_account
+    sign_out
+    User.find(params[:id]).destroy
+    render json: {}
+  end
+
   private
 
   def authorize!
