@@ -38,6 +38,7 @@ FactoryGirl.define do
       role 'student'
       username
       classroom
+      classcode { classroom.code }
 
       factory :arnold_horshack do
         name                  'Arnold Horshack'

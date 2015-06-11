@@ -46,7 +46,14 @@ class Teachers::UnitsController < ApplicationController
   end
 
   def unit_params
-    params[:unit][:classrooms].each{|c| c[:student_ids] ||= []} # rails converts empty json arrays into nil, which is undesirable
+    params[:unit][:classrooms].each do |c| # rails converts empty json arrays into nil, which is undesirable
+     c[:id] = c[:id].to_i
+     c[:student_ids] ||= []
+     c[:student_ids] = c[:student_ids].map{|id| id.to_i} # convert ids to Integers (from strings)
+    end
+    params[:unit][:activities].each do |a|
+      a[:id] = a[:id].to_i
+    end
     params.require(:unit).permit(:name, classrooms: [:id, :all_students, :student_ids => []], activities: [:id, :due_date])
   end
 end

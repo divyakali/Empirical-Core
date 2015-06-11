@@ -100,7 +100,7 @@ class Unit < ActiveRecord::Base
     split_extant_cas = self.classroom_activities.partition do |ca|
       p = incoming_cs.map{|c| c[:id]}.include?(ca.classroom_id)
       q = incoming_as.map{|a| a[:id]}.include?(ca.activity_id)
-      p & q
+      (p & q)
     end
   end
 
@@ -110,10 +110,10 @@ class Unit < ActiveRecord::Base
                          extant_incoming_as)
     extant_cas_to_be_updated.each do |ca|
       relevant_incoming_classroom = extant_incoming_cs.find{|c| c[:id] == ca.classroom_id}
-      extant_incoming_student_ids = relevant_incoming_classroom[:student_ids]
+      incoming_student_ids = relevant_incoming_classroom[:student_ids]
       relevant_incoming_activity  = extant_incoming_as.find{|a| a[:id] == ca.activity_id}
       new_due_date = relevant_incoming_activity[:due_date]
-      ca.update_ca(extant_incoming_student_ids, new_due_date)
+      ca.update_ca(incoming_student_ids, new_due_date)
     end
   end
 end
