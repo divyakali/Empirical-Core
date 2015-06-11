@@ -69,11 +69,65 @@ class ClassroomActivity < ActiveRecord::Base
     end
   end
 
+  # used in unit.update_unit
+  def update_ca (extant_incoming_student_ids,
+                 new_due_date)
+
+    is_different_due_date = self.is_different_due_date(new_due_date)
+
+    are_assigned_students_different = self.are_assigned_students_different(extant_incoming_student_ids)
+
+    if are_assigned_students_different
+      # make sure this is done before we update assigned_student_ids on ca (below in this method),
+      # so we still know who was previously assigned
+      self.update_relevant_activity_sessions extant_incoming_student_ids
+    end
+
+    if has_due_date_changed or are_assigned_students_changed
+      self.update_attributes(due_date: relevant_incoming_activity[:due_date],
+                             assigned_student_ids: relevant_incoming_classroom[:student_ids])
+    end
+  end
+
   protected
 
   def assign_to_students
     students.each do |student|
       session_for(student)
     end
+  end
+
+  # used in self.update_ca
+
+  def are_assigned_students_different student_ids
+    not_contain_same_elements((self.assigned_student_ids ||= []), extant_incoming_student_ids)
+  end
+
+  def not_contain_same_elements arr1, arr2
+    arr1.sort.uniq != arr2.sort.uniq
+  end
+
+  def is_different_due_date new_due_date
+    (self.due_date.to_date != new_due_date.to_date)
+  end
+
+  def update_relevant_activity_sessions extant_incoming_student_ids
+    # destroy the activity_sessions of those students who are no longer selected
+    # create new activity_sessions for those who are newly selected
+    formerly  = self.get_assigned_student_ids self.assigned_student_ids
+    should_be = self.get_assigned_student_ids extant_incoming_student_ids
+
+    extant_student_ids_to_be_removed = formerly  - should_be
+    new_student_ids_to_be_added      = should_be - formerly
+
+    self.activity_sessions.where(user_id: extant_student_ids_to_be_removed).destroy_all
+    new_student_ids_to_be_added.each{|student_id| self.session_for_by_id(student_id)}
+  end
+
+  def get_assigned_student_ids ids
+    # dont simply return self.assigned_student_ids or self.classroom.students.ids
+    # this method is written this exact particular way because of how its used in #update_relevant_activity_sessions
+    # is not the same as #assigned_students.pluck(:id)
+    (ids.nil? or ids.empty?) ?  self.classroom.students.pluck(:id) : ids
   end
 end

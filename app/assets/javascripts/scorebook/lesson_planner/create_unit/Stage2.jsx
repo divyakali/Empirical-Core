@@ -1,5 +1,20 @@
 "use strict";
 EC.Stage2 = React.createClass({
+  propTypes: {
+    isInEditMode: React.PropTypes.bool.isRequired,
+    unitName: React.PropTypes.string.isRequired,
+    selectedActivities: React.PropTypes.array.isRequired,
+    classrooms: React.PropTypes.array.isRequired,
+    toggleActivitySelection: React.PropTypes.func.isRequired,
+    toggleClassroomSelection: React.PropTypes.func.isRequired,
+    toggleStudentSelection: React.PropTypes.func.isRequired,
+    finish: React.PropTypes.func.isRequired,
+    assignActivityDueDate: React.PropTypes.func.isRequired,
+    areAnyStudentsSelected: React.PropTypes.bool.isRequired,
+    areAllDueDatesProvided: React.PropTypes.bool.isRequired,
+    formattedDueDates: React.PropTypes.object.isRequired,
+    errorMessage: React.PropTypes.func.isRequired
+  },
 
   getInitialState: function() {
     return {

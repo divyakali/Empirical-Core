@@ -59,70 +59,61 @@ class Unit < ActiveRecord::Base
     create_new_cas incoming_cs, new_incoming_as
   end
 
-  def create_new_cas cs, as
+  def create_new_cas cs, as # c = classroom, a = activity ; NOTE: these are not records, but hashes incoming from an ajax post
     cs.each do |c|
       as.each do |a|
         self.classroom_activities.create(classroom_id: c[:id],
                                          activity_id: a[:id],
                                          assigned_student_ids: c[:student_ids],
                                          due_date: a[:due_date])
-
       end
     end
   end
 
-
   # UPDATING
+  def update_unit name, incoming_cs, incoming_as # c = classroom, a = activity
+    self.update_attributes(name: name)
 
+    extant_cas_to_be_updated, extant_cas_to_be_removed = self.split_extant_cas(incoming_cs,
+                                                                               incoming_as)
+    extant_cas_to_be_removed.map(&:destroy)
+
+    extant_incoming_cs, new_incoming_cs = self.split_incoming incoming_cs, 'classroom_id'
+    extant_incoming_as, new_incoming_as = self.split_incoming incoming_as, 'activity_id'
+
+    self.update_extant_cas(extant_cas_to_be_updated,
+                           extant_incoming_cs,
+                           extant_incoming_as)
+
+    self.create_new_cas new_incoming_cs,      incoming_as
+    self.create_new_cas     incoming_cs,  new_incoming_as
+  end
+
+  def split_incoming data, type_id
+    extant_ids = self.classroom_activities.pluck(type_id.to_sym)
+    split = data.partition do |d|
+      extant_ids.include?(d[:id])
+    end
+  end
+
+  def split_extant_cas incoming_cs, incoming_as
+    split_extant_cas = self.classroom_activities.partition do |ca|
+      p = incoming_cs.map{|c| c[:id]}.include?(ca.classroom_id)
+      q = incoming_as.map{|a| a[:id]}.include?(ca.activity_id)
+      p & q
+    end
+  end
+
+  # ACTUALLY UPDATING RECORDS
   def update_extant_cas (extant_cas_to_be_updated,
-                         extant_incoming_classrooms,
-                         extant_incoming_activities)
-    extant_cas_to_be_updated.each{|ca| update_extant_ca(ca, extant_incoming_classrooms, extant_incoming_activities)}
-  end
-
-  def update_extant_ca (extant_ca,
-                        extant_incoming_classrooms,
-                        extant_incoming_activities)
-
-    relevant_incoming_classroom = extant_incoming_classrooms.find{|c| c[:id] == extant_ca.classroom_id}
-    relevant_incoming_activity  = extant_incoming_activities.find{|a| a[:id] == extant_ca.activity_id}
-
-    changed_due_date = (extant_ca.due_date.to_date != relevant_incoming_activity[:due_date].to_date)
-
-    are_assigned_students_changed = not_contain_same_elements((extant_ca.assigned_student_ids ||= []), relevant_incoming_classroom[:student_ids])
-
-
-    if are_assigned_students_changed
-      # make sure this is done before we update assigned_student_ids on ca,
-      # so we still know who was previously assigned
-      update_relevant_activity_sessions extant_ca, relevant_incoming_classroom
-    end
-
-    if changed_due_date or are_assigned_students_changed
-      extant_ca.update_attributes(due_date: relevant_incoming_activity[:due_date],
-                                  assigned_student_ids: relevant_incoming_classroom[:student_ids])
+                         extant_incoming_cs,
+                         extant_incoming_as)
+    extant_cas_to_be_updated.each do |ca|
+      relevant_incoming_classroom = extant_incoming_cs.find{|c| c[:id] == ca.classroom_id}
+      extant_incoming_student_ids = relevant_incoming_classroom[:student_ids]
+      relevant_incoming_activity  = extant_incoming_as.find{|a| a[:id] == ca.activity_id}
+      new_due_date = relevant_incoming_activity[:due_date]
+      ca.update_ca(extant_incoming_student_ids, new_due_date)
     end
   end
-
-  def not_contain_same_elements arr1, arr2
-    arr1.sort.uniq != arr2.sort.uniq
-  end
-
-  def update_relevant_activity_sessions extant_ca, relevant_incoming_classroom
-    # destroy the activity_sessions of those students who are no longer selected
-    # create new activity_sessions for those who are newly selected
-    formerly  = get_assigned_student_ids extant_ca, extant_ca.assigned_student_ids
-    should_be = get_assigned_student_ids extant_ca, relevant_incoming_classroom[:student_ids]
-
-    extant_sids_to_be_removed = formerly  - should_be
-    new_sids_to_be_added      = should_be - formerly
-
-    extant_ca.activity_sessions.where(user_id: extant_sids_to_be_removed).destroy_all
-    new_sids_to_be_added.each{|sid| extant_ca.session_for_by_id(sid)}
-  end
-
-  def get_assigned_student_ids ca, ids
-    (ids.nil? or ids.empty?) ?  ca.classroom.students.pluck(:id) : ids
-  end
-
 end
