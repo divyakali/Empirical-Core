@@ -30,7 +30,7 @@ class ConceptTagResult < ActiveRecord::Base
       concept_tag_results.concept_tag_id
     SELECT
     ).joins({:activity_session => {:classroom_activity => :classroom}})
-  #  add the folloowing line :
+  #  add the following line :
   # ).joins({:concept_tag => {:concept_category})
       .where("activity_sessions.state = ?", "finished")
       .where("classrooms.teacher_id = ?", teacher.id) # Always by teacher
@@ -84,7 +84,6 @@ class ConceptTagResult < ActiveRecord::Base
   end
 
   private
-  # this will not be needed at all
   def extract_tag_from_metadata
     return unless metadata.present?
     tag_name = metadata.delete("concept_tag") # Can't use symbols because it's a JSON hash

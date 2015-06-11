@@ -1,11 +1,9 @@
 class ConceptTag < ActiveRecord::Base
-  # belongs_to :concept_category
+  # add 'belongs_to :concept_category'
   # remove 'belongs_to :concept_class'
-
   belongs_to :concept_class
   has_many :concept_tag_results
 
-  # below stays the same
   def self.for_progress_report(teacher, filters)
     with(filtered_correct_results: ConceptTagResult.correct_results_for_progress_report(teacher, filters))
       .select(<<-SELECT

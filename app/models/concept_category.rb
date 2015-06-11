@@ -4,7 +4,6 @@ class ConceptCategory < ActiveRecord::Base
   # remove 'has_many :concept_tag_results'
   has_many :concept_tag_results
 
-  # below stays the same
   def self.for_progress_report(teacher, filters)
     with(filtered_correct_results: ConceptTagResult.correct_results_for_progress_report(teacher, filters))
       .select(<<-SELECT
