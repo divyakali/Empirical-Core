@@ -38,7 +38,7 @@ FactoryGirl.define do
       role 'student'
       username
       classroom
-      classcode { classroom.code }
+      classcode { if classroom.present? then classroom.code end}
 
       factory :arnold_horshack do
         name                  'Arnold Horshack'

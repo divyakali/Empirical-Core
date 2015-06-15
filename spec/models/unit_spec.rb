@@ -108,7 +108,7 @@ describe Unit, type: :model do
           expect(extant_cas_to_be_updated).to match_array([ca4])
         end
 
-        it 'correctly identifies those which must perish' do
+        it 'correctly identifies those to be destroyed' do
           expect(extant_cas_to_be_destroyed).to match_array([ca1, ca2, ca3])
         end
 
@@ -217,7 +217,24 @@ describe Unit, type: :model do
         end
 
         it "creates the appropriate activity_sessions for the new cas" do
-
+=begin
+ca5 (c2, a3) : student2_2, student2_3
+ca6 (c3, a2) : student3
+ca7 (c3, a3) : student3
+=end
+          ass1 = student2_2.activity_sessions.where(activity_id: incoming_a3[:id])
+          ass2 = student2_3.activity_sessions.where(activity_id: incoming_a3[:id])
+          ass3 = student3.activity_sessions.where(activity_id: incoming_a2[:id])
+          ass4 = student3.activity_sessions.where(activity_id: incoming_a3[:id])
+          arr = [ass1, ass2, ass3, ass4].map do |ass|
+            ass.length == 1
+          end
+          expect(arr).to_not include(false)
+        end
+        
+        it 'does not create an activity_session for a student who was not assigned in a new ca' do 
+          ass5 = student2_1.activity_sessions.where(activity_id: incoming_a3[:id])
+          expect(ass5).to be_empty
         end
       end
     end

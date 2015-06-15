@@ -85,8 +85,9 @@ class Unit < ActiveRecord::Base
                            extant_incoming_cs,
                            extant_incoming_as)
 
-    self.create_new_cas new_incoming_cs,      incoming_as
-    self.create_new_cas     incoming_cs,  new_incoming_as
+    self.create_new_cas    new_incoming_cs,  extant_incoming_as
+    self.create_new_cas extant_incoming_cs,     new_incoming_as
+    self.create_new_cas    new_incoming_cs,     new_incoming_as
   end
 
   def split_incoming data, type_id
