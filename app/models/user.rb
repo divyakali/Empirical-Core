@@ -1,16 +1,20 @@
 class User < ActiveRecord::Base
   include Student, Teacher
 
-  attr_accessor :validate_username
+  attr_accessor :validate_username, :require_password_confirmation_when_password_present
+
+  before_save :capitalize_name
 
   has_secure_password validations: false
 
   has_and_belongs_to_many :schools
   has_and_belongs_to_many :districts
+  has_many :subscriptions
 
   delegate :name, :mail_city, :mail_state, to: :school, allow_nil: true, prefix: :school
 
-  validates :name,                  format:       {without: /\t/, message: 'cannot contain tabs'}
+  validates :name,                  presence: true,
+                                    format:       {without: /\t/, message: 'cannot contain tabs'}
 
   validate :name_must_contain_first_and_last_name
 
@@ -103,6 +107,19 @@ class User < ActiveRecord::Base
 
       ) as sorting_name
     SQL
+  end
+
+  def capitalize_name
+    result = name
+    if name.present?
+      f,l = name.split(/\s+/)
+      if f.present? and l.present?
+        result = "#{f.capitalize} #{l.capitalize}"
+      else
+        result = name.capitalize
+      end
+    end
+    self.name = result
   end
 
   def self.for_standards_report(teacher, filters)
@@ -321,7 +338,7 @@ private
   end
 
   def requires_password_confirmation?
-    requires_password? && password.present?
+    require_password_confirmation_when_password_present.present? || (requires_password? && password.present?)
   end
 
   # FIXME: may not be being called anywhere
