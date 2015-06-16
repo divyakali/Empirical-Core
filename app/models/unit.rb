@@ -41,23 +41,34 @@ class Unit < ActiveRecord::Base
 
       num_students_assigned = assigned_student_ids.uniq.length
 
-      x1 = x1.uniq{|y| y[:activity_id] }
-
-      ele = {unit: Unit.find(unit_id), classroom_activities: x1, num_students_assigned: num_students_assigned, classrooms: classrooms}
+      #x1 = x1.uniq{|y| y[:activity_id] }
+      unit = Unit.find(unit_id)
+      ele = {unit: unit,
+             activity_assignments: unit.extract_activity_assignments,
+             num_students_assigned: num_students_assigned, 
+             classrooms: classrooms}
       ele
     end
   end
 
+  def extract_classroom_assignments
+    classroom_activities.uniq(&:classroom_id).map do |ca|
+      {classroom: ca.classroom, assigned_students: ca.students, students: ca.classroom.students}
+    end
+  end
+
+  def extract_activity_assignments
+    classroom_activities.uniq(&:activity_id).map do |ca|
+      {activity: ActivitySerializer.new(ca.activity).as_json(root: false),
+       formatted_due_date: ca.formatted_due_date,
+       name: ca.activity.name, 
+       due_date: ca.due_date}
+    end
+  end
+
+
   # CREATING
   # these are called in #create and #update in UnitsController
-
-  def create_new_cas_for_new_incoming_classrooms new_incoming_cs, incoming_as
-    create_new_cas new_incoming_cs, incoming_as
-  end
-
-  def create_new_cas_for_new_incoming_activities new_incoming_as, incoming_cs
-    create_new_cas incoming_cs, new_incoming_as
-  end
 
   def create_new_cas cs, as # c = classroom, a = activity ; NOTE: these are not records, but hashes incoming from an ajax post
     cs.each do |c|

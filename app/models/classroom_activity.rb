@@ -88,9 +88,12 @@ class ClassroomActivity < ActiveRecord::Base
     new_student_ids_to_be_added.each{|student_id| self.session_for_by_id(student_id)}
   end
 
+  def formatted_due_date
+    return "" if due_date.nil?
+    due_date.month.to_s + "-" + due_date.day.to_s + "-" + due_date.year.to_s
+  end
 
   protected
-
 
 
   def get_assigned_student_ids ids

@@ -21,7 +21,10 @@ EmpiricalGrammar::Application.routes.draw do
   get :porthole_proxy, to: 'porthole_proxy#index'
 
   namespace :teachers do
-    resources :units, as: 'units_path'  # moved from within classroom, since units are now cross-classroom
+    resources :units, as: 'units_path' do  # moved from within classroom, since units are now cross-classroom
+      resources :activity_assignments
+      resources :classroom_assignments
+    end
     resources :classroom_activities, only: [:destroy, :update], as: 'classroom_activities_path'
 
 

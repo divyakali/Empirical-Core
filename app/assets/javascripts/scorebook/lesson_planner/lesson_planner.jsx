@@ -45,15 +45,17 @@ EC.LessonPlanner = React.createClass({
 	},
 
 	getSelectedClassroomsForEditMode: function () {
+		var sc;
 		if (this.state.isInEditIndividualUnitMode) {
-			return _.map(this.state.individualUnitToEdit.classroom_activities, function (ca) {
+			console.log('cas', this.state.individualUnitToEdit.classroom_activities)
+			sc =  _.map(this.state.individualUnitToEdit.classroom_activities, function (ca) {
 				var x1 = {classroom_id: ca.classroom_id, assigned_student_ids: ca.assigned_student_ids};
 				return x1;
 			});
 		} else {
-			return [];
+			sc = [];
 		}
-
+		return sc;
 	},
 
 	getUnitIdForEditMode: function () {
@@ -73,6 +75,8 @@ EC.LessonPlanner = React.createClass({
 	},
 
 	render: function () {
+		var slcc = this.getSelectedClassroomsForEditMode();
+		console.log('selected classrooms : ', slcc)
 		var tabSpecificComponents;
 		if (this.state.tab == 'createUnit') {
 			tabSpecificComponents = <EC.CreateUnit isInEditMode={this.state.isInEditIndividualUnitMode}

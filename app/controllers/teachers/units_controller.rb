@@ -31,7 +31,9 @@ class Teachers::UnitsController < ApplicationController
   end
 
   def index
-    render json: (Unit.index_for_activity_planner(current_user))
+    x = Unit.index_for_activity_planner(current_user)
+    puts "\n index of units well send : \n \n #{x.to_json}"
+    render json: x
   end
 
   def destroy

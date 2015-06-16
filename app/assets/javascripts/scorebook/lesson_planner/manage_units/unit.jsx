@@ -1,8 +1,15 @@
-"use strict";
+'use strict';
 EC.Unit = React.createClass({
+	propTypes: {
+		unit: React.PropTypes.object.isRequired,
+		updateDueDate: React.PropTypes.func.isRequired,
+		editUnit: React.PropTypes.func.isRequired,
+		deleteUnit: React.PropTypes.func.isRequired,
+		deleteActivityAssignment: React.PropTypes.fund.isRequired
+	},
 
 	editUnit: function () {
-		this.props.editUnit(this.props.data);
+		this.props.editUnit(this.props.unit);
 	},
 
 	deleteUnit: function () {
@@ -45,11 +52,11 @@ EC.Unit = React.createClass({
 	},
 
 	render: function () {
-		var classroomActivities = _.map(this.props.data.classroom_activities, function (ca) {
-			return (<EC.ClassroomActivity
+		var activityAssignments = _.map(this.props.unit.activity_assignments, function (as) {
+			return (<EC.ActivityAssignment
 							updateDueDate={this.props.updateDueDate}
-							deleteClassroomActivity={this.props.deleteClassroomActivity}
-							data={ca} />);
+							deleteActivityAssignment={this.props.deleteActivityAssignment}
+							unitId={this.props.unit.id}/>);
 		}, this);
 
 		return (

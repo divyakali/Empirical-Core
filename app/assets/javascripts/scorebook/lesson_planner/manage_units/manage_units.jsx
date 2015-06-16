@@ -1,5 +1,9 @@
 "use strict";
 EC.ManageUnits = React.createClass({
+	propTypes: {
+		toggleTab: React.PropTypes.func.isRequired,
+		editIndividualUnit: React.PropTypes.func.isRequired
+	},
 
 	getInitialState: function () {
 		return {
@@ -17,9 +21,11 @@ EC.ManageUnits = React.createClass({
 
 		});
 	},
+	
 	displayUnits: function (data) {
 		this.setState({units: data.units});
 	},
+	
 	deleteUnit: function (id) {
 		var units, x1;
 		units = this.state.units;
@@ -37,13 +43,14 @@ EC.ManageUnits = React.createClass({
 			}
 		});
 	},
-	deleteClassroomActivity: function (ca_id, unit_id) {
+
+	deleteActivityAssignment: function (unitId, activityId) {
 		var units, x1;
 		units = this.state.units;
 		x1 = _.map(units, function (unit) {
-			if (unit.unit.id === unit_id) {
-				unit.classroom_activities = _.reject(unit.classroom_activities, function (ca) {
-					return ca.id === ca_id;
+			if (unit.unit.id === unitId) {
+				unit.activity_assignments = _.reject(unit.activity_assignments, function (as) {
+					return as.activity.id === activityId;
 				});
 			}
 			return unit;
@@ -52,18 +59,19 @@ EC.ManageUnits = React.createClass({
 
 		$.ajax({
 			type: "delete",
-			url: "/teachers/classroom_activities/" + ca_id,
+			url: "/teachers/units/" + unitId + "/activity_assignments/" + activityId,
 			success: function () {
 			},
 			error: function () {
 			}
 		});
 	},
-	updateDueDate: function (ca_id, date) {
+	
+	updateDueDate: function (unitId, activityId, date) {
 		$.ajax({
 			type: "put",
 			data: {due_date: date},
-			url: "/teachers/classroom_activities/" + ca_id,
+			url: "/teachers/units/" + unitId + "/activity_assignments/" + activityId,
 			success: function () {
 			},
 			error: function () {
@@ -71,25 +79,29 @@ EC.ManageUnits = React.createClass({
 
 		});
 	},
+	
 	switchToCreateUnit: function () {
 		this.props.toggleTab('createUnit');
 	},
-
+	
 	render: function () {
+		var units = _.map(this.state.units, function (unit) {
+			return (<EC.Unit
+							unit={unit}
+							editUnit={this.props.editIndividualUnit}
+							deleteUnit={this.deleteUnit}
+							updateDueDate={this.updateDueDate}
+							deleteActivityAssignment={this.deleteActivityAssignment}/>);
+		}, this);
 		return (
 			<div className="container manage-units">
 				<div  className= "create-unit-button-container">
 					<button onClick={this.switchToCreateUnit} className="button-green create-unit">Create a New Unit</button>
 				</div>
-				<EC.Units
-					updateDueDate={this.updateDueDate}
-					deleteClassroomActivity={this.deleteClassroomActivity}
-					editIndividualUnit={this.props.editIndividualUnit}
-					deleteUnit={this.deleteUnit} data={this.state.units} />
+				<span>
+					{units}
+				</span>
 			</div>
 		);
-
 	}
-
-
 });
