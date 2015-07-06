@@ -6,7 +6,7 @@ describe 'create concepts' do
   before :all do
     Rake.application.rake_require 'tasks/create_concepts'
     Rake::Task.define_task(:environment)
-    create_concepts
+    create_concepts 'concepts_3_test_data.csv'
   end
 
   def helper1 parent_name
