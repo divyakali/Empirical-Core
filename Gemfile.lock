@@ -17,6 +17,7 @@ GIT
 
 GEM
   remote: https://rubygems.org/
+  remote: https://rails-assets.org/
   specs:
     CFPropertyList (2.3.1)
     actionmailer (4.1.12)
@@ -415,6 +416,7 @@ GEM
       bundler (>= 1.3.0, < 2.0)
       railties (= 4.1.12)
       sprockets-rails (~> 2.0)
+    rails-assets-swagger-ui (2.1.4)
     rails_12factor (0.0.3)
       rails_serve_static_assets
       rails_stdout_logging
@@ -536,6 +538,7 @@ GEM
       actionpack (>= 3.0)
       activesupport (>= 3.0)
       sprockets (>= 2.8, < 4.0)
+    swagger-blocks (1.1.3)
     temple (0.7.6)
     terminal-notifier-guard (1.6.4)
     therubyracer (0.12.2)
@@ -638,6 +641,7 @@ DEPENDENCIES
   rack-cors
   rack-heartbeat
   rails (~> 4.1.4)
+  rails-assets-swagger-ui!
   rails_12factor
   ranked-model
   ransack
@@ -655,6 +659,7 @@ DEPENDENCIES
   slim-rails
   spring
   spring-commands-rspec
+  swagger-blocks
   terminal-notifier-guard
   therubyracer
   timecop
@@ -664,4 +669,4 @@ DEPENDENCIES
   webmock
 
 BUNDLED WITH
-   1.10.5
+   1.10.6

@@ -59,6 +59,7 @@ gem 'analytics-ruby', '~> 2.0.0', :require => 'segment/analytics'
 
 # API
 gem "active_model_serializers"
+gem 'swagger-blocks'
 
 # UI HELPERS
 gem 'sass'
@@ -79,6 +80,10 @@ gem 'react-rails', '~>0.12.0.0'
 gem 'therubyracer', require: false
 gem 'uglifier',     require: false
 gem 'kaminari'
+
+source 'https://rails-assets.org' do
+  gem 'rails-assets-swagger-ui'
+end
 
 
 # MIDDLEWARE

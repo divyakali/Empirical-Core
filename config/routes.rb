@@ -13,6 +13,7 @@ EmpiricalGrammar::Application.routes.draw do
   resources :password_reset
   resources :schools, only: [:index], format: 'json'
   resources :activity_sessions, only: [:show]
+  resources :apidocs, only: [:index]
 
   resources :activities, only: [:show, :update] do
     post :retry, on: :member
